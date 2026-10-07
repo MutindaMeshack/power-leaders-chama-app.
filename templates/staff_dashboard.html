@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Staff Dashboard - Power Leaders App</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 30px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .balance-card { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; width: 280px; }
+    .balance-card .label { font-size: 13px; opacity: 0.8; }
+    .balance-card .amount { font-size: 28px; font-weight: bold; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #2c3e50; color: white; }
+    .logout-btn { padding: 8px 16px; background: #c0392b; color: white; border: none; border-radius: 4px; text-decoration: none; }
+    .flash { padding: 10px; border-radius: 4px; margin-bottom: 16px; }
+    .flash.success { background: #d4edda; color: #155724; }
+    .flash.danger { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Staff Dashboard</h1>
+    <a class="logout-btn" href="{{ url_for('logout') }}">Logout</a>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="balance-card">
+    <div class="label">Co-operative Bank Balance</div>
+    <div class="amount">KES {{ "%.2f"|format(data.bank_balance) }}</div>
+  </div>
+
+  <h2>Members</h2>
+  <div style="background:white; padding:20px; border-radius:8px; margin-bottom:20px; max-width:400px;">
+  <h3 style="margin-top:0;">Record a Payment</h3>
+  <form method="POST" action="{{ url_for('staff_record_payment') }}">
+    <select name="phone" required style="width:100%; padding:8px; margin-bottom:10px;">
+      <option value="" disabled selected>Select member</option>
+      {% for member in data.members %}
+        <option value="{{ member.phone }}">{{ member.name }} ({{ member.member_id }})</option>
+      {% endfor %}
+    </select>
+    <input type="number" step="0.01" name="amount" placeholder="Amount (KES)" required style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <button type="submit" style="width:100%; padding:10px; background:#1f4d3a; color:white; border:none; border-radius:4px; cursor:pointer;">Record Payment</button>
+  </form>
+</div>
+<div style="background:white; padding:20px; border-radius:8px; margin-bottom:20px; max-width:420px;">
+  <h3 style="margin-top:0;">Add New Member</h3>
+  <form method="POST" action="{{ url_for('staff_add_member') }}">
+    <input type="text" name="name" placeholder="Full name" required style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <input type="text" name="phone" placeholder="Phone number (07xxxxxxxx)" required style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <input type="text" name="member_id" placeholder="Membership ID (e.g. PLIG 11)" required style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <input type="number" step="0.01" name="initial_size" placeholder="Starting SIZE balance (optional)" style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <input type="number" step="0.01" name="initial_loan" placeholder="Starting loan balance (optional)" style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <button type="submit" style="width:100%; padding:10px; background:#1f4d3a; color:white; border:none; border-radius:4px; cursor:pointer;">Add Member</button>
+  </form>
+</div>
+<div style="background:white; padding:20px; border-radius:8px; margin-bottom:20px; max-width:420px;">
+  <h3 style="margin-top:0;">Disburse Loan</h3>
+  <form method="POST" action="{{ url_for('staff_disburse_loan') }}">
+    <select name="phone" required style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+      <option value="" disabled selected>Select member</option>
+      {% for m in data.members %}
+        <option value="{{ m.phone }}">{{ m.name }} ({{ m.member_id }})</option>
+      {% endfor %}
+    </select>
+    <input type="number" step="0.01" name="amount" placeholder="Loan amount (KES)" required style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <input type="text" name="note" placeholder="Reason (optional)" style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <button type="submit" style="width:100%; padding:10px; background:#1f4d3a; color:white; border:none; border-radius:4px; cursor:pointer;">Disburse Loan</button>
+  </form>
+</div>
+<div style="background:white; padding:20px; border-radius:8px; margin-bottom:20px; max-width:420px;">
+  <h3 style="margin-top:0;">Upload Group Document</h3>
+  <form method="POST" action="{{ url_for('staff_upload_document') }}" enctype="multipart/form-data">
+    <input type="text" name="title" placeholder="Document title (e.g. Group Constitution)" style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+    <input type="file" name="document" required style="width:100%; margin-bottom:10px;">
+    <button type="submit" style="width:100%; padding:10px; background:#1f4d3a; color:white; border:none; border-radius:4px; cursor:pointer;">Upload</button>
+  </form>
+</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Member ID</th>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>SIZE Balance</th>
+        <th>Loan Balance</th>
+        <th>Total Balance</th>
+        <th>Account</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for member in data.members %}
+      <tr>
+        <td>{{ member.member_id }}</td>
+        <td>{{ member.name }}</td>
+        <td>{{ member.phone }}</td>
+        <td>KES {{ "%.2f"|format(member.size_balance) }}</td>
+        <td>KES {{ "%.2f"|format(member.loan_balance) }}</td>
+        <td>KES {{ "%.2f"|format(member.size_balance + member.loan_balance) }}</td>
+                        <td>
+                  {% if member.password_hash %}
+                    <form method="POST" action="{{ url_for('staff_reset_password', phone=member.phone) }}" style="display:inline;" onsubmit="return confirm('Reset password for {{ member.name }}? They will need to register again.');">
+                      <button type="submit" style="padding:4px 10px; font-size:12px; background:#e67e22; color:white; border:none; border-radius:4px; cursor:pointer;">Reset Password</button>
+                    </form>
+                  {% else %}
+                    <span style="font-size:12px; color:#999;">Not registered</span>
+                  {% endif %}
+                  <form method="POST" action="{{ url_for('staff_remove_member', phone=member.phone) }}" style="display:inline; margin-left:4px;" onsubmit="return confirm('Remove {{ member.name }} from the group? This cannot be undone.');">
+                    <button type="submit" style="padding:4px 10px; font-size:12px; background:#c0392b; color:white; border:none; border-radius:4px; cursor:pointer;">Remove</button>
+                  </form>
+                </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+<h2>Member Feedback</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Member</th>
+      <th>Category</th>
+      <th>Message</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if data.feedback %}
+      {% for item in data.feedback %}
+      <tr>
+        <td>{{ item.date }}</td>
+        <td>{{ item.member_name }}</td>
+        <td>{{ item.category }}</td>
+        <td>{{ item.message }}</td>
+        <td>
+          {% if item.resolved %}
+            <span style="color:#27ae60; font-weight:bold;">Resolved</span>
+          {% else %}
+            <span style="color:#c0392b; font-weight:bold;">Pending</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if not item.resolved %}
+          <form method="POST" action="{{ url_for('staff_resolve_feedback', feedback_index=loop.index0) }}">
+            <button type="submit" style="padding:4px 10px; font-size:12px; background:#1f4d3a; color:white; border:none; border-radius:4px; cursor:pointer;">Mark Resolved</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="6" style="text-align:center; padding:14px;">No feedback submitted yet.</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+<h2>Suspense Pool (Unmatched Payments)</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Date</th><th>Payer Name (as SMS)</th><th>Amount</th><th>Ref</th><th>Allocate To</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if data.suspense_pool %}
+      {% for item in data.suspense_pool %}
+      <tr>
+        <td>{{ item.date }}</td>
+        <td>{{ item.payer_name }}</td>
+        <td>KES {{ "%.2f"|format(item.amount) }}</td>
+        <td>{{ item.mpesa_ref }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('staff_allocate_suspense', index=loop.index0) }}" style="display:flex; gap:6px; align-items:center;">
+            <select name="phone" required style="padding:4px;">
+              <option value="" disabled selected>Select member</option>
+              {% for m in data.members %}
+                <option value="{{ m.phone }}">{{ m.name }}</option>
+              {% endfor %}
+            </select>
+            <label style="font-size:12px;"><input type="checkbox" name="save_alias"> save as alias</label>
+            <button type="submit" style="padding:4px 10px; font-size:12px; background:#1f4d3a; color:white; border:none; border-radius:4px; cursor:pointer;">Allocate</button>
+          </form>
+        </td>
+        <td>
+          <form method="POST" action="{{ url_for('staff_discard_suspense', index=loop.index0) }}" onsubmit="return confirm('Discard this entry? The amount stays in the bank balance but unallocated.');">
+            <button type="submit" style="padding:4px 10px; font-size:12px; background:#c0392b; color:white; border:none; border-radius:4px; cursor:pointer;">Discard</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="6" style="text-align:center; padding:14px;">No unmatched payments.</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+<h2>Group Documents</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Uploaded</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if data.documents %}
+      {% for doc in data.documents %}
+      <tr>
+        <td>{{ doc.title }}</td>
+        <td>{{ doc.uploaded_date }}</td>
+        <td>
+          <a href="{{ url_for('download_document', filename=doc.filename) }}" style="color:#1f4d3a; font-weight:600; text-decoration:none; margin-right:10px;">Download</a>
+          <form method="POST" action="{{ url_for('staff_delete_document', doc_index=loop.index0) }}" style="display:inline;" onsubmit="return confirm('Delete {{ doc.title }}?');">
+            <button type="submit" style="padding:4px 10px; font-size:12px; background:#c0392b; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="3" style="text-align:center; padding:14px;">No documents uploaded yet.</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+</body>
+</html>

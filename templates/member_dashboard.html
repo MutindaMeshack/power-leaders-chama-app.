@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>My Dashboard - Power Leaders App</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 30px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .cards { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .card { background: white; padding: 18px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex: 1; min-width: 180px; }
+    .card .label { font-size: 13px; color: #777; }
+    .card .amount { font-size: 24px; font-weight: bold; margin-top: 4px; }
+    .card.total { background: #2c3e50; color: white; }
+    .card.total .label { color: #ccc; }
+    .logout-btn { padding: 8px 16px; background: #c0392b; color: white; border: none; border-radius: 4px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Welcome, {{ member.name }}</h1>
+    <a class="logout-btn" href="{{ url_for('logout') }}">Logout</a>
+  </div>
+
+  <p>Member ID: {{ member.member_id }}</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">SIZE Balance</div>
+      <div class="amount">KES {{ "%.2f"|format(member.size_balance) }}</div>
+    </div>
+    <div class="card">
+      <div class="label">Loan Balance</div>
+      <div class="amount">KES {{ "%.2f"|format(member.loan_balance) }}</div>
+    </div>
+    <div class="card total">
+      <div class="label">Total Owed</div>
+      <div class="amount">KES {{ "%.2f"|format(total_balance) }}</div>
+    </div>
+  </div>
+
+  {% if member.advance_balance and member.advance_balance > 0 %}
+  <div style="background:#e8f5e9; border:1px solid #4caf50; padding:14px 18px; border-radius:8px; margin-bottom:24px;">
+    <strong>Advance Credit:</strong> KES {{ "%.2f"|format(member.advance_balance) }} — this will be automatically applied to your next contribution.
+  </div>
+  {% endif %}
+
+  <h3>Monthly Contributions (from October 2026)</h3>
+  {% if member.monthly_contributions %}
+    <table style="width:100%; background:white; border-collapse:collapse; margin-bottom:24px;">
+      <tr style="background:#2c3e50; color:white;">
+        <th style="text-align:left; padding:8px;">Month</th>
+        <th style="text-align:left; padding:8px;">Due</th>
+        <th style="text-align:left; padding:8px;">Paid</th>
+        <th style="text-align:left; padding:8px;">Penalty</th>
+        <th style="text-align:left; padding:8px;">Status</th>
+      </tr>
+      {% for entry in member.monthly_contributions|sort(attribute='month') %}
+      <tr>
+        <td style="padding:8px;">{{ entry.month }}</td>
+        <td style="padding:8px;">KES {{ "%.2f"|format(entry.due) }}</td>
+        <td style="padding:8px;">KES {{ "%.2f"|format(entry.paid) }}</td>
+        <td style="padding:8px;">KES {{ "%.2f"|format(entry.penalty) }}</td>
+        <td style="padding:8px;">
+          {% if entry.status == "Paid" %}
+            <span style="color:#27ae60; font-weight:bold;">Paid</span>
+          {% elif entry.status == "Partial" %}
+            <span style="color:#e67e22; font-weight:bold;">Partial</span>
+          {% elif entry.status == "Unpaid" %}
+            <span style="color:#c0392b; font-weight:bold;">Unpaid</span>
+          {% else %}
+            <span style="color:#7f8c8d;">Pending</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No monthly contribution records yet. Tracking begins October 2026.</p>
+  {% endif %}
+
+  <h3>Payment History</h3>
+  {% if member.payment_history %}
+    <table style="width:100%; background:white; border-collapse:collapse;">
+      <tr><th style="text-align:left; padding:8px;">Date</th><th style="text-align:left; padding:8px;">Amount</th><th style="text-align:left; padding:8px;">Receipt</th></tr>
+      {% for entry in member.payment_history %}
+<tr>
+  <td style="padding:8px;">{{ entry.date }}</td>
+  <td style="padding:8px;">KES {{ entry.amount }}</td>
+  <td style="padding:8px;">
+    <a href="{{ url_for('download_receipt', payment_index=loop.index0) }}" style="color:#1f4d3a; font-weight:600; text-decoration:none;">Download Receipt</a>
+  </td>
+</tr>
+{% endfor %}
+    </table>
+  {% else %}
+    <p>No payments recorded yet.</p>
+  {% endif %}
+<h3>Group Documents</h3>
+{% if data.documents %}
+  <table style="width:100%; background:white; border-collapse:collapse; margin-bottom:24px;">
+    {% for doc in data.documents %}
+    <tr>
+      <td style="padding:8px;">{{ doc.title }}</td>
+      <td style="padding:8px;"><a href="{{ url_for('download_document', filename=doc.filename) }}" style="color:#1f4d3a; font-weight:600; text-decoration:none;">Download</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+{% else %}
+  <p>No documents available yet.</p>
+{% endif %}
+<h3>Submit Feedback</h3>
+<div style="background:white; padding:20px; border-radius:8px; max-width:420px;">
+  <form method="POST" action="{{ url_for('submit_feedback') }}">
+    <select name="category" required style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
+      <option value="" disabled selected>Select category</option>
+      <option value="Complaint">Complaint</option>
+      <option value="Compliment">Compliment</option>
+      <option value="Inquiry">Inquiry</option>
+    </select>
+    <textarea name="message" placeholder="Your message..." required rows="4" style="width:100%; padding:8px; box-sizing:border-box; margin-bottom:10px; font-family:Arial;"></textarea>
+    <button type="submit" style="width:100%; padding:10px; background:#1f4d3a; color:white; border:none; border-radius:4px; cursor:pointer;">Submit</button>
+  </form>
+</div>
+</body>
+</html>

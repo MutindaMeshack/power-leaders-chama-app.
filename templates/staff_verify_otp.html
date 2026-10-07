@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Verify OTP - Power Leaders App</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 320px; }
+    h2 { margin-top: 0; }
+    input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; letter-spacing: 4px; text-align: center; font-size: 18px; }
+    button { width: 100%; padding: 10px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .flash { padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+    .flash.success { background: #d4edda; color: #155724; }
+    .flash.danger { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Enter OTP</h2>
+    <p>Check the admin email for a 6-digit code.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+      <input type="text" name="otp" placeholder="000000" maxlength="6" required>
+      <button type="submit">Verify</button>
+    </form>
+  </div>
+</body>
+</html>

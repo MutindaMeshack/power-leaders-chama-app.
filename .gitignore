@@ -1,0 +1,8 @@
+.env
+venv/
+__pycache__/
+*.pyc
+chama_data*.json
+*.zip
+static/uploads/*
+!static/uploads/Group_Logo.jpeg
